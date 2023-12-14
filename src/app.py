@@ -43,13 +43,6 @@ def sitemap():
     return generate_sitemap(app)
 
 
-@app.route("/user", methods=["GET"])
-def handle_hello():
-    response_body = {"msg": "Hello, this is your GET /user response "}
-
-    return jsonify(response_body), 200
-
-
 @app.route("/item", methods=["GET"])
 def get_item_list():
     item_list = BDManagement.get_item_list()
@@ -103,6 +96,39 @@ def get_starship_list():
 def get_starship_by_id(starship_id):
     starship_filtered = BDManagement.get_starship_by_id(starship_id)
     return jsonify(starship_filtered), 200
+
+
+@app.route("/user", methods=["GET"])
+def get_user_list():
+    user_list = BDManagement.get_user_list()
+    return jsonify(user_list), 200
+
+
+@app.route("/user/<int:user_id>", methods=["GET"])
+def get_user_by_id(user_id):
+    filtered_user = BDManagement.get_user_by_id(user_id)
+    return jsonify(filtered_user), 200
+
+
+@app.route(
+    "/user/favourite", methods=["GET"]
+)  # requires a request.body with {"user_id": X}
+def get_user_favourites():
+    request_body = request.json
+    filtered_favourites = BDManagement.get_user_favourites(request.json["user_id"])
+    return jsonify(filtered_favourites), 200
+
+
+@app.route(
+    "/user/favourite", methods=["POST"]
+)  # requires a request.body with {"user_id": X, 'item_id': X}
+def add_user_favourite():
+    request_body = request.json
+    user_favourites = BDManagement.add_user_favourite(request_body)
+    return (
+        jsonify({"message": "Favourite added", "updated_favourites": user_favourites}),
+        200,
+    )
 
 
 # this only runs if `$ python src/app.py` is executed

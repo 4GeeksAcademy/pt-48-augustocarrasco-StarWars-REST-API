@@ -3,9 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-
+from enum import Enum
 
 db = SQLAlchemy()
+
+
+# class ItemType(Enum):
+#     CHARACTER = "Character"
+#     PLANET = "Planet"
+#     STARSHIP = "Starship"
+#     NULL = None
 
 
 class Item(db.Model):
@@ -14,15 +21,15 @@ class Item(db.Model):
     name = db.Column(db.String(120), unique=True, nullable=False)
     img = db.Column(db.String(), nullable=False)
     description = db.Column(db.String(), unique=True, nullable=False)
+    # type = db.Column(db.Enum(ItemType), nullable=True)
 
     characters = db.relationship("Character", back_populates="items")
     planets = db.relationship("Planet", back_populates="items")
     starships = db.relationship("Starship", back_populates="items")
-
-    
+    favourites = db.relationship("Favourite", back_populates="items")
 
     def __repr__(self):
-        return "<Item %r>" % self.name
+        return "<Item %r>" % {self.id, self.name}
 
     def serialize(self):
         return {
@@ -35,8 +42,7 @@ class Item(db.Model):
 
 class Character(db.Model):
     __tablename__ = "characters"
-    item = db.Column(db.Integer, db.ForeignKey("items.id"))
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey("items.id"), primary_key=True)
     height = db.Column(db.Integer, nullable=False)
     mass = db.Column(db.Integer, nullable=False)
     hair_color = db.Column(db.String, nullable=False)
@@ -55,8 +61,8 @@ class Character(db.Model):
 
     def serialize(self):
         return {
-            'id': self.id,
-            'name' :self.items.name,
+            "id": self.id,
+            "name": self.items.name,
             "height": self.height,
             "mass": self.mass,
             "hair_color": self.hair_color,
@@ -71,9 +77,10 @@ class Character(db.Model):
 
 
 class Planet(db.Model):
+    items = db.relationship("Item", back_populates="planets")
     __tablename__ = "planets"
-    item = db.Column(db.Integer, db.ForeignKey("items.id"))
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey("items.id"), primary_key=True)
+
     diameter = db.Column(db.String, nullable=False)
     rotation_period = db.Column(db.Integer, nullable=False)
     orbital_period = db.Column(db.Integer, nullable=False)
@@ -85,15 +92,13 @@ class Planet(db.Model):
     created = db.Column(db.String, nullable=False)
     edited = db.Column(db.String, nullable=False)
 
-    items = db.relationship("Item", back_populates="planets")
-
     def __repr__(self):
         return "<Planet >"
 
     def serialize(self):
         return {
-            'id': self.id,
-            'name' :self.items.name,
+            "id": self.id,
+            "name": self.items.name,
             "diameter": self.diameter,
             "rotation_period": self.rotation_period,
             "orbital_period": self.orbital_period,
@@ -109,8 +114,7 @@ class Planet(db.Model):
 
 class Starship(db.Model):
     __tablename__ = "starships"
-    item = db.Column(db.Integer, db.ForeignKey("items.id"))
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey("items.id"), primary_key=True)
     model = db.Column(db.String, nullable=False)
     starship_class = db.Column(db.String, nullable=False)
     cost_in_credits = db.Column(db.Integer, nullable=False)
@@ -132,8 +136,8 @@ class Starship(db.Model):
 
     def serialize(self):
         return {
-            'id': self.id,
-            'name' :self.items.name,
+            "id": self.id,
+            "name": self.items.name,
             "model": self.model,
             "starship_class": self.starship_class,
             "cost_in_credits": self.cost_in_credits,
@@ -147,6 +151,40 @@ class Starship(db.Model):
             "consumables": self.consumables,
             "created": self.created,
             "edited": self.edited,
+        }
+
+
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(25), nullable=False)
+    password = db.Column(db.String(25), nullable=False)
+    email = db.Column(db.String(100), nullable=False, unique=True)
+
+    def __repr__(self):
+        return "<User >"
+
+    def serialize(self):
+        return {"id": self.id, "username": self.username, "email": self.email}
+
+
+class Favourite(db.Model):
+    __tablename__ = "favourites"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    item_id = db.Column(db.Integer, db.ForeignKey("items.id"))
+
+    items = db.relationship("Item", back_populates="favourites")
+
+    def __repr__(self):
+        return "<Favourite >"
+
+    def serialize(self):
+        return {
+            "id": self.item_id,
+            "name": self.items.name,
+            "description": self.items.description,
+            "img": self.items.img,
         }
 
 
